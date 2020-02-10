@@ -1,37 +1,36 @@
 <template>
   <div class="test">
-    <table class="table table-hover" v-for="(name, index) in names" :key="index">
-      <thead v-b-toggle="name.G">
-        <tr>
-          <th scope="col">{{ name.G }}</th>
-        </tr>
-      </thead>
-      <b-collapse visible :id="name.G">
-        <tr v-if="!itemsDates(index).length">
-          <td>Пусто</td>
-        </tr>
-        <tr v-for="(date, ind) in itemsDates(index)" :key="ind">
-          <td>{{name.B[date.T].N}}</td>
-          <td>{{date.C}}</td>
-          <td>{{date.P}}</td>
-        </tr>
-      </b-collapse>
-    </table>
-
-    <!-- <div v-for="(date, index) in dates" :key="index">{{ index }}-{{ date }}</div> -->
-    <!-- <p v-for="(value, index1) in names" :key="index1">{{ index1 }}-{{ value }}</p> -->
-
-    <!-- <pre>{{ names }}</pre> -->
-    <!-- <pre>{{ dates }}</pre> -->
-
-    <!-- <pre>{{ courses }}</pre> -->
-    <p>{{createObject}}</p>
-    <p>{{ errors }}</p>
+    <div class="container">
+      <div class="row">
+        <table class="table table-hover" v-for="(items, index) in dataa" :key="index">
+          <thead v-b-toggle="items.name">
+            <tr>
+              <th scope="col">{{ items.name }}</th>
+            </tr>
+          </thead>
+          <b-collapse visible :id="items.name">
+            <tbody>
+              <tr v-if="!Object.keys(items.data).length">
+                <td>Пусто</td>
+              </tr>
+              <tr v-else v-for="(item, ind) in items.data" :key="ind">
+                <td>{{item.name}}({{item.P}})</td>
+                <!-- <td>{{item.C | coursesFilter}}</td> -->
+                <td>{{ item.C }}</td>
+                <button @click="addToCart(item)">Добавить</button>
+              </tr>
+            </tbody>
+          </b-collapse>
+        </table>
+        <p>{{ errors }}</p>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import axios from "axios";
+import convert from "xml-js";
 
 export default {
   name: "test",
@@ -40,82 +39,108 @@ export default {
   },
   data() {
     return {
-      dates: null,
-      names: null,
-      courses: null,
+      dates: [],
+      names: [],
+      counter: 0,
+      coursesUSD: null,
       errors: null
     };
   },
   computed: {
-    createObject: function() {
-      let myObject = new Object();
+    dataa: function() {
+      let data = [];
 
       Object.entries(this.names).forEach(([keys, value]) => {
-        console.log(keys, value.G);
-
+        data[keys] = {
+          name: value.G,
+          data: {}
+        };
         Object.entries(value.B).forEach(([key, element]) => {
-          if (typeof this.dates[key] == "object") {
-            myObject = {
-              name: value.G,
-              nameCategory: element.N,
-              date:this.dates[key]
-            };
-
-            //в верхний объект в поле дата добавть имя и содержимое объекта dates[key]
-          }
-          console.log(myObject);
-          console.log(typeof this.dates[key] == "object");
-          //if (element.G == key) {
-          //  myObject[key] += element;
-          //}
-          console.log(key, element.N);
+          Object.entries(this.dates).forEach(([keyss, elements]) => {
+            if (elements.T == key) {
+              data[keys].data[key] = {
+                name: element.N,
+                C: (elements.C * this.coursesUSD).toFixed(2),
+                P: elements.P
+              };
+            }
+          });
         });
       });
-
-      return myObject;
+      console.log(data);
+      return Object.values(data);
     }
+  },
+
+  /*  mounted() {
+    setInterval(function() {
+      this.getData();
+      this.getNames();
+      this.getCources();
+    }, 15000);
+  }, */
+  mounted() {
+    this.getData();
+    this.getNames();
+    this.getCources();
+    /* window.setInterval(() => {
+      this.getData();
+      this.getNames();
+      // this.getCources();
+    }, 15000); */
   },
   methods: {
-    itemsDates(id) {
-      return this.dates.filter(item => item.G == id);
+    addToCart: function(product) {
+      console.log(product);
+    },
+    getData() {
+      axios
+        .get("http://localhost:3000/files/data.json")
+        .then(response => {
+          this.dates = response.data.Value.Goods;
+        })
+        .catch(error => {
+          this.errors = error;
+        });
+    },
+    getNames() {
+      axios
+        .get("http://localhost:3000/files/names.json")
+        .then(response => {
+          this.names = response.data;
+        })
+        .catch(error => {
+          this.errors = error;
+        });
+    },
+    getCources() {
+      axios
+        .get("http://nbrb.by/Services/XmlExRates.aspx")
+        .then(response => {
+          let courses = convert.xml2json(response.data, {
+            compact: true,
+            spaces: 4
+          });
+          let jsonCourses = JSON.parse(courses);
+          Object.entries(jsonCourses.DailyExRates.Currency).forEach(
+            ([key, value]) => {
+              if (value.CharCode._text == "USD") {
+                this.coursesUSD = value.Rate._text;
+                // console.log(key, value.Rate._text);
+              }
+            }
+          );
+        })
+        .catch(error => {
+          this.errors = error;
+        });
     }
-  },
-
-  mounted() {
-    axios
-      .get("http://localhost:3000/files/data.json")
-      .then(response => {
-        this.dates = response.data.Value.Goods;
-        console.log(JSON.stringify(this.dates));
-      })
-      .catch(error => {
-        this.errors = error;
-      });
-
-    axios
-      .get("http://localhost:3000/files/names.json")
-      .then(response => {
-        this.names = response.data;
-        // console.log(JSON.stringify(this.names));
-      })
-      .catch(error => {
-        this.errors = error;
-      });
-
-    axios
-      .get("http://nbrb.by/Services/XmlExRates.aspx")
-      .then(response => {
-        this.courses = response.data;
-      })
-      .catch(error => {
-        this.errors = error;
-      });
   }
 };
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped lang="scss">
+<style scoped>
 /* h3 {
   margin: 40px 0 0;
 }
