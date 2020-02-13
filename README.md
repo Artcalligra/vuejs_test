@@ -1,5 +1,9 @@
 # testproject
 
+## Server start
+```
+go to folder file_server and run  index.js
+```
 ## Project setup
 ```
 npm install

@@ -2,66 +2,65 @@
   <div class="test">
     <div class="container">
       <div class="row mt-3">
-        <div class="col-md-9 ">
-          <!-- <div class="row "> -->
-            <b-form-group label="Курс USD:" label-for="input-1" class="form-inline">
-              <b-form-input
-                id="input-course"
-                v-model="coursesUSD"
-                type="number"
-                step="0.01"
-                :min="0"
-                class="col-5 ml-3"
-                :style="changeUSD"
-                required
-              ></b-form-input>
-            </b-form-group>
-          <!-- </div> -->
+        <div class="col-md-9">
+          <b-form-group label="Курс USD:" label-for="input-1" class="form-inline">
+            <b-form-input
+              id="input-course"
+              v-model="coursesUSD"
+              type="number"
+              step="0.01"
+              :min="0"
+              class="col-5 ml-3"
+              :style="changeUSD"
+              required
+            ></b-form-input>
+          </b-form-group>
         </div>
         <div class="col-md-3 text-right">
           <b-button v-b-modal.modal-1>Корзина({{cart.length}})</b-button>
 
           <b-modal id="modal-1" size="xl" centered title="Корзина" hide-footer>
-            <!-- <div class="col-12"> -->
             <table class="table">
               <thead>
-                <tr>
-                  <th>Наименование товара</th>
-                  <th>Количество</th>
-                  <th>Цена</th>
-                </tr>
+                <th style="width: 55%">Наименование товара</th>
+                <th style="width: 15%">Количество</th>
+                <th style="width: 15%">Цена</th>
+                <th style="width: 15%"></th>
               </thead>
               <tr v-if="!cart.length">
                 <td>Пусто</td>
               </tr>
               <tr v-else v-for="(item, index) in cart" :key="index">
-                <td>{{item.catname}}. {{item.name}}</td>
-                <td>
+                <td style="width: 55%">{{item.catname}}. {{item.name}}</td>
+                <td style="width: 15%">
                   <input
                     type="number"
                     v-model="item.col"
                     :min="1"
                     :max="item.P"
-                    :style="item.equallyCol ? 'border-color: red' :  ''"
+                    :class="item.col==item.P? 'iseQually':''"
                   />
                 </td>
-                <td>{{(Number(item.C * coursesUSD) * Number(item.col)).toFixed(2)}}</td>
-                <td>
-                  <button @click="removeCart(index)">&#10008;</button>
+                <td
+                  style="width: 15%"
+                >{{(Number(item.C * coursesUSD) * Number(item.col)).toFixed(2)}} p.</td>
+                <td style="width: 15%">
+                  <button @click="removeCart(index)">Удалить</button>
                 </td>
               </tr>
             </table>
-            <p v-if="cart.length" class="text-right">Общая стоимость {{colCart}}</p>
-            <!-- </div> -->
+            <p v-if="cart.length" class="text-right">
+              <b>Общая стоимость:</b>
+              {{colCart}} p.
+            </p>
           </b-modal>
         </div>
       </div>
-      <!-- <button @click="addToCart(1,1)">test</button> -->
       <div class="row">
         <table class="table table-hover" v-for="(items, index) in dataa" :key="index">
           <thead v-b-toggle="items.name">
             <tr>
-              <th>{{ items.name }}</th>
+              <th scope="col">{{ items.name }}</th>
             </tr>
           </thead>
           <b-collapse visible :id="items.name">
@@ -74,7 +73,7 @@
                 <td style="width: 15%">{{item.P}}</td>
                 <td style="width: 15%">{{ (item.C * coursesUSD).toFixed(2) }}</td>
                 <td style="width: 10%">
-                  <button @click="addToCart(item.id, index, ind)">&plus;</button>
+                  <button @click="addToCart(item.id, index, ind)">Добавить</button>
                 </td>
               </tr>
             </tbody>
@@ -92,9 +91,6 @@ import convert from "xml-js";
 
 export default {
   name: "test",
-  props: {
-    msg: String
-  },
   data() {
     return {
       dates: [],
@@ -106,23 +102,20 @@ export default {
     };
   },
   watch: {
+    // подсветка поля с курсом валют
     coursesUSD: {
       handler(val, oldVal) {
-        if(oldVal==null){
-          this.changeUSD = "border-color: #ced4da;";
-        }else if(val > oldVal){
-
-          this.changeUSD = "border-color: green;";
-        } else {
-          this.changeUSD = "border-color: red;";
-        }
-        // console.log("changed!", val, oldVal);
-        return this.changeUSD;
+        return oldVal == null
+          ? (this.changeUSD = "border-color: #ced4da;")
+          : val > oldVal
+          ? (this.changeUSD = "border-color: red;")
+          : (this.changeUSD = "border-color: green;");
       },
       immediate: true
     }
   },
   computed: {
+    // подсчёт общей суммы корзины
     colCart: function() {
       let col = 0;
       Object.entries(this.cart).forEach(([keys, value]) => {
@@ -130,6 +123,7 @@ export default {
       });
       return col.toFixed(2);
     },
+    // создание нового объекта для работы с данными
     dataa: function() {
       let data = [];
 
@@ -161,47 +155,55 @@ export default {
     this.getData();
     this.getNames();
     this.getCources();
-    /* window.setInterval(() => {
+    window.setInterval(() => {
       this.getData();
-      this.getNames();
-      // this.getCources();
-    }, 15000); */
+    }, 15000);
   },
   methods: {
+    // добавление в корзину
     addToCart(id, indcat, ind) {
       //id - id товара
       //indcat - индекс категории
       //ind - индекс подкатегории
-
+      let itemsProcessed = 0;
       let newitem = true;
-      let equallyCol = false;
+      this.cart.forEach((item, index, array) => {
+        //asyncFunction((item, index, array), () => {
+          itemsProcessed++;
+          if (itemsProcessed === array.length-1) {
+            console.log(itemsProcessed,array.length-1)
+            if (array[index].id == id) {
+              newitem = false;
+              if (array[index].col != array[index].P) {
+                array[index].col++;
+              }
+            } else {
+              newitem = true;
+            }
+          }
+        //})
+      });
+
       //перебор корзины для поиска уже существующих товаров, в случае нахождения добавляем количество +1
-      for (let key in this.cart) {
+      /*  for (let key in this.cart) {
         if (this.cart[key].id == id) {
           newitem = false;
           if (this.cart[key].col != this.cart[key].P) {
             this.cart[key].col++;
-            this.cart[key].equallyCol = false;
-          } else {
-            this.cart[key].equallyCol = true;
           }
         } else {
           newitem = true;
         }
-      }
+      } */
       //если товар новый, то просто добавляем его в корзину
       if (newitem || this.cart.length == 0) {
-        if (this.dataa[indcat].data[ind].P == 1) {
-          equallyCol = true;
-        }
         this.cart[id] = {
           id: id,
           catname: this.dataa[indcat].name,
           name: this.dataa[indcat].data[ind].name,
           C: this.dataa[indcat].data[ind].C,
           P: this.dataa[indcat].data[ind].P,
-          col: 1,
-          equallyCol: equallyCol
+          col: 1
         };
       }
       console.log(this.cart);
@@ -210,6 +212,7 @@ export default {
     removeCart(index) {
       this.cart.splice(index, 1);
     },
+    // получение данных из файла data.json
     getData() {
       axios
         .get("http://localhost:3000/files/data.json")
@@ -220,6 +223,7 @@ export default {
           this.errors = error;
         });
     },
+    // получение данных из файла names.json
     getNames() {
       axios
         .get("http://localhost:3000/files/names.json")
@@ -230,6 +234,7 @@ export default {
           this.errors = error;
         });
     },
+    // получение курсов валют с нацбанка
     getCources() {
       axios
         .get("http://nbrb.by/Services/XmlExRates.aspx")
@@ -256,14 +261,22 @@ export default {
 </script>
 
 <style>
-.table td {
-  vertical-align: middle !important;
+.iseQually {
+  border-color: red;
 }
+
+thead {
+  border: 2px solid #dee2e6;
+}
+
 .modal-title {
   margin: auto;
 }
 .modal-header .close {
   padding: 0 !important;
   margin: 0 !important;
+}
+.modal-dialog {
+  max-width: 650px !important;
 }
 </style>
