@@ -146,7 +146,6 @@ export default {
           });
         });
       });
-      // console.log(data);
       return Object.values(data);
     }
   },
@@ -167,36 +166,31 @@ export default {
       //ind - индекс подкатегории
       let itemsProcessed = 0;
       let newitem = true;
-      this.cart.forEach((item, index, array) => {
-        //asyncFunction((item, index, array), () => {
-          itemsProcessed++;
-          if (itemsProcessed === array.length-1) {
-            console.log(itemsProcessed,array.length-1)
-            if (array[index].id == id) {
-              newitem = false;
-              if (array[index].col != array[index].P) {
-                array[index].col++;
-              }
-            } else {
-              newitem = true;
-            }
-          }
-        //})
-      });
 
       //перебор корзины для поиска уже существующих товаров, в случае нахождения добавляем количество +1
-      /*  for (let key in this.cart) {
+      for (let key in this.cart) {
         if (this.cart[key].id == id) {
           newitem = false;
           if (this.cart[key].col != this.cart[key].P) {
             this.cart[key].col++;
           }
-        } else {
-          newitem = true;
         }
-      } */
-      //если товар новый, то просто добавляем его в корзину
-      if (newitem || this.cart.length == 0) {
+        //если товар новый, то просто добавляем его в корзину
+        if (this.cart[key].id == this.cart[this.cart.length - 1].id) {
+          if (newitem) {
+            this.cart[id] = {
+              id: id,
+              catname: this.dataa[indcat].name,
+              name: this.dataa[indcat].data[ind].name,
+              C: this.dataa[indcat].data[ind].C,
+              P: this.dataa[indcat].data[ind].P,
+              col: 1
+            };
+          }
+        }
+      }
+      //если корзина пустая, то добавляем товар
+      if (this.cart.length == 0) {
         this.cart[id] = {
           id: id,
           catname: this.dataa[indcat].name,
@@ -206,7 +200,6 @@ export default {
           col: 1
         };
       }
-      console.log(this.cart);
       this.cart = Object.values(this.cart);
     },
     removeCart(index) {
