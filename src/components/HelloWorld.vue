@@ -126,13 +126,14 @@ export default {
     // создание нового объекта для работы с данными
     dataa: function() {
       let data = [];
-
+      // добавление id имени категории
       Object.entries(this.names).forEach(([keys, value]) => {
         data[keys] = {
           id: keys,
           name: value.G,
           data: {}
         };
+        // добавление id, имени, цены и количества подкатегории
         Object.entries(value.B).forEach(([key, element]) => {
           Object.entries(this.dates).forEach(([keyss, elements]) => {
             if (elements.T == key) {
@@ -175,7 +176,7 @@ export default {
             this.cart[key].col++;
           }
         }
-        //если товар новый, то просто добавляем его в корзину
+        //при прохождении последнего элемента массива если товар новый, то просто добавляем его в корзину
         if (this.cart[key].id == this.cart[this.cart.length - 1].id) {
           if (newitem) {
             this.cart[id] = {
@@ -202,9 +203,11 @@ export default {
       }
       this.cart = Object.values(this.cart);
     },
+    // удаление элемента из корзины
     removeCart(index) {
       this.cart.splice(index, 1);
     },
+    // для запуска сервера необходимо запустить файл index.js из папки file_server
     // получение данных из файла data.json
     getData() {
       axios
